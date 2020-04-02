@@ -1,0 +1,269 @@
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//Creates and assigns all substance generated maps
+//Works with VRay only
+//Expects materials and Shading group to contain the same BASENAME and the substance files
+//Takes 1 argument: Single Folder containing SubstanceMaps
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+proc attachSubstanceFiles(string $sourcePath){
+	//creates a list of variables to connect between the file nodes and p2d node//
+	string $p2dVar[] = {".coverage", ".translateFrame", ".rotateFrame", ".mirrorU", ".mirrorV", ".stagger", ".wrapU", ".wrapV", ".repeatUV", ".offset", ".rotateUV", ".noiseUV", ".vertexUvOne", ".vertexUvTwo", ".vertexUvThree", ".vertexCameraOne", ".outUV", ".outUvFilterSize"};
+	string $textVar[] = {".coverage", ".translateFrame", ".rotateFrame", ".mirrorU", ".mirrorV", ".stagger", ".wrapU", ".wrapV", ".repeatUV", ".offset", ".rotateUV", ".noiseUV", ".vertexUvOne", ".vertexUvTwo", ".vertexUvThree", ".vertexCameraOne", ".uv", ".uvFilterSize"};
+
+	//string $sourcePath[] = `fileDialog2 -ds 2 -fm 3 -cap "Select A Folder" -okc "Run"`;
+	//string $sourcePath = "/Users/mRom/Documents/_Gnomon/Classes/Summer18/TS2/mattRom_T2_Final/sourceimages/textures/base_mtl";
+	//string $sourcePath = "E:/mattRom_T2_Final/sourceimages/textures/base_mtl";
+
+	
+	string $fileList[] = `getFileList -folder $sourcePath -fs "*.png"`;
+	
+	string $mapName[] = $fileList;
+	int $numOfMaps = `size($mapName)`;
+	string $baseName = `basename $sourcePath ""`;
+
+	int $sourcePathLen = `size($sourcePath)`;
+	int $baseNameLen = `size($baseName)`;
+	int $dispType = 0;
+
+	//GetpathName
+	int $pathNameCount = 0;
+	int $pathNameEndCon = 0;
+	string $pathName = "";
+	while($pathNameEndCon == 0){
+		$pathName = `substring $sourcePath ($pathNameCount + $baseNameLen) $sourcePathLen`;
+		if (startsWith($pathName, "sourceimages") == 1){ $pathNameEndCon = 1;}
+		if ($pathNameCount > $sourcePathLen){ $pathNameEndCon = 1;}
+
+		$pathNameCount ++;
+		}
+		//print $pathName;
+	//trimsMapNames
+	int $usLocation = 0;
+	
+	//remove .png and store elsewhere.
+	int $mapNameLen = `size($mapName[0])`;
+	string $mapExtension = `substring $mapName[0] ($mapNameLen - 3) $mapNameLen`;
+
+
+
+	for( $e = 0; $e < `size($mapName)`; $e++){
+			$mapNameLen = `size($mapName[$e])`;
+			$usLocation = $mapNameLen;
+			int $mapStripEndCon = 0;
+			string $checkerString = `substring $mapName[$e] $usLocation $mapNameLen`;
+			
+			while( $mapStripEndCon == 0){
+				$usLocation --;
+				$checkerString = `substring $mapName[$e] $usLocation $mapNameLen`;
+				if(`startsWith $checkerString "_"` == 1){ $mapStripEndCon = 1;}
+				if ($usLocation < 0){ $mapStripEndCon = 1;}
+
+				}
+			$mapName[$e] = `substring $mapName[$e] ($usLocation + 1) ($mapNameLen - 4)`;
+		}
+	//endTrimMapNames
+	int $fileListSize = `size($fileList[0])`;	
+	string $spObjName = `startString $fileList[0] ($fileListSize - $usLocation + 1)`;
+	string $textureSetName = $baseName;
+	int $textureSetNameLen = `size($textureSetName)`;
+	
+	//Strip ending flag from textureSet
+	$usLocation = $textureSetNameLen;
+	int $tsStripEndCon = 0;
+	$checkerString = `substring $textureSetName $usLocation $textureSetNameLen`;
+
+	while( $tsStripEndCon == 0){
+		$usLocation --;
+		$checkerString = `substring $textureSetName $usLocation $textureSetNameLen`;
+		if(`startsWith $checkerString "_"`){ $tsStripEndCon = 1;}
+		}
+	$textureSetName = `substring $textureSetName 1 ($usLocation - 1)`;
+
+	//creates and attaches gammaNodes, VrayMtl
+	string $attrNames[] = {"color", "reflectionColor", "refractionColor", "fogColor", "translucencyColor"};
+	float $attrValues[] = {.5, 0, 0, 0, 0};
+	setAttr ($textureSetName + "_mtl.bumpMapType") 1;
+	
+	for($k = 0; $k <`size($attrNames)`; $k ++){
+    	string $nodeName= $textureSetName + "_" + $attrNames[$k] + "_gc";
+    	shadingNode -asUtility -n $nodeName gammaCorrect;
+    	setAttr ($nodeName + ".gamma") .4545 .4545 .4545;
+    	setAttr ($nodeName + ".value") -type "float3" $attrValues[$k] $attrValues[$k] $attrValues[$k];
+    	connectAttr ($nodeName + ".outValue") ($textureSetName + "_mtl." + $attrNames[$k]);
+		}
+	//end gc attach
+	//create place2d
+	shadingNode -asTexture -isColorManaged -n ($textureSetName + "_P2D") place2dTexture;
+	
+	
+	
+	//creates file nodes
+	for($j = 0; $j < $numOfMaps; $j++){
+	string $fileNodeBaseName = $mapName[$j];
+	string $fileNodeName = $textureSetName + "_" + $fileNodeBaseName;
+	shadingNode -asTexture -n ($fileNodeName) file;
+	setAttr ($fileNodeName + ".filterType") 0;
+	setAttr ($fileNodeName + ".fileTextureName") -type "string" `fromNativePath ($pathName + "\\" + $fileList[$j])`;
+		//specialized connections//
+	//print $fileList[1];
+	if($fileNodeBaseName == "Diffuse"){
+		shadingNode -asUtility -n ($fileNodeName + "_hsv") remapHsv;
+		connectAttr -f ($fileNodeName + ".outColor") ($fileNodeName + "_hsv" + ".color");
+		connectAttr -f ($fileNodeName + "_hsv.outColor") ($textureSetName + "_" + $attrNames[0] + "_gc.value");
+		}
+
+	if($fileNodeBaseName == "Reflection"){
+		connectAttr -f ($fileNodeName + ".outColor") ($textureSetName + "_" + $attrNames[1] + "_gc.value");
+		}
+
+	if($fileNodeBaseName == "Bump"){
+		connectAttr -f ($fileNodeName + ".outColor") ($textureSetName + "_mtl.bumpMap");
+		}
+
+	if($fileNodeBaseName == "Normal"){
+		setAttr ($textureSetName + "_mtl.bumpMapType") 1;
+		connectAttr -f ($fileNodeName + ".outColor") ($textureSetName + "_mtl.bumpMap");
+		}
+
+	if($fileNodeBaseName == "Glossiness"){
+		shadingNode -asUtility -n ($fileNodeName + "_hsv") remapHsv;
+		connectAttr -f ($fileNodeName + ".outColor") ($fileNodeName + "_hsv" + ".color");
+		connectAttr -f ($fileNodeName + "_hsv.outColorR") ($textureSetName + "_mtl.reflectionGlossiness");
+		}
+
+
+	if($fileNodeBaseName == "Height"){
+		if($dispType == 0){
+			string $setObjs[] = `sets -q ($textureSetName + "_sg")`;
+			string $dispName = $textureSetName + "_vrDisp";
+			createNode VRayDisplacement -n $dispName;
+			vray addAttributesFromGroup $dispName vray_displacement 1;
+			vray addAttributesFromGroup $dispName vray_subdivision 1;
+			vray addAttributesFromGroup $dispName vray_opensubdiv 1;
+			expression -s ($dispName + ".vrayDisplacementShift = -.5 * " + $dispName + ".vrayDisplacementAmount;")  -o $dispName -ae 1 -uc all;
+			connectAttr -f ($fileNodeName + ".outColor") ($dispName + ".displacement");
+			sets -edit -forceElement  $dispName $setObjs;
+			}
+		}
+
+	if($fileNodeBaseName == "ior"){
+		setAttr ($textureSetName + "_mtl.lockFresnelIORToRefractionIOR") 0;
+		connectAttr -f ($fileNodeName + ".outColorR") ($textureSetName + "_mtl.fresnelIOR");
+		}
+	for ($i = 0; $i < `size($p2dVar)`; $i++){
+		connectAttr -f ($textureSetName + "_P2D" + $p2dVar[$i]) ($fileNodeName + $textVar[$i]);
+		}
+	}
+}
+/*
+string $dir = (`workspace -q -rootDirectory` + "//sourceimages");
+string $selectedFolder[] = `fileDialog2 -ds 2  -fm 3 -cap "Select A Folder" -okc "Run" -dir $dir`;
+string $subFolders[] = `getFileList -fld $selectedFolder[0]`;
+
+
+for($e = 0; $e < `size($subFolders)`; $e++){
+	if(`gmatch $subFolders[$e] "*.*"` == 0){
+		string $subFolderFullPath = $selectedFolder[0] + "/" + $subFolders[$e];
+		attachSubstanceFiles($subFolderFullPath);
+	} 
+}
+*/
+string $dir = (`workspace -q -rootDirectory` + "//sourceimages");
+string $selectedFolder[] = `fileDialog2 -ds 2  -fm 3 -cap "Select A Folder" -okc "Run" -dir $dir`;
+//print $selectedFolder[0];
+if( $selectedFolder[0] == ""){
+	print "it was cancelled";
+	}
+if( $selectedFolder[0] != ""){
+	
+	
+	attachSubstanceFiles($selectedFolder[0]);
+	
+	
+	}
+	
+	
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////SCRAP AND TESTING////////////////////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////	
+	
+	
+/*
+//attachSubstanceFiles($selectedFolder[0]);
+
+//end create file nodes//
+/*Hope it helps. -Matt
+
+/*
+if($dispType == 1){
+//creates displacement, Maya style
+shadingNode -asUtility -n ($textureSetName + "_dispShader") displacementShader;
+connectAttr -f ($textureSetName + $mapName[$j] + ".outAlpha") ($textureSetName + "_dispShader.displacement");
+connectAttr -f ($textureSetName + "_dispShader.displacement") ($objSG[0] + ".displacementShader");
+setAttr ($textureSetName + $mapName[$j] +".alphaIsLuminance") true;
+//sets an expression on the alphaOffset to equal -.5 the Gain
+expression -s ($textureSetName + $mapName[$j] + ".alphaOffset = " + $textureSetName + $mapName[$j] + ".alphaGain * -.5;") -o ($textureSetName + $mapName[$j]) -alwaysEvaluate 1 -unitConversion all;
+}
+*/
+
+
+/*
+
+int $lenFN = size($objFN[$mtl]);
+string $objEndN = `substring $objSN[$mtl] ($lenFN - 3) $lenFN`;
+//removes _mtl tag from name if present//
+if( `tolower $objEndN` == "_mtl"){
+	$objSN[$mtl] = `substring $objSN[$mtl] 1 ($lenFN - 4)`;
+	}
+	//Gets the shadingGroup name//
+string $objSG[] = `connectionInfo -dfs ($objFN[$mtl] +".outColor")`;
+
+int $lenSG = size($objSG[0]);
+int $attrStart = 1;
+string $searchFor = ".";
+
+for( $k = $lenSG; $k > 1; $k --){
+	if(`substring $objSG[0] $k $k` == "."){
+		$attrStart = $k;
+		}
+		}
+$objSG[0] = `substring $objSG[0] 1 ($attrStart -1)`;
+$lenSG = size($objSG[0]);
+//end get shadingGroupName//
+
+//////////////////////////////////////////////////
+//Connect Substance Maps To Materials
+//////////////////////////////////////////////////
+
+//////////////////////////////////////////////////
+//Personal Notes
+//write: add material Type and name for rapid addition of materials, if selection has more than 1 obj, prompt for name, if only one, take name from obj.
+//addNodeType of mtl in generation.
+
+//Takes a path, clarify if its a directory of maps or directory of folders--No
+//Assume it's a folder directory if it contains folders or if it contains files.
+//////////////////////////////////////////////////
+
+//////////////////////////////////////////////////
+fileExtension //gets file extension
+dirname //gets name of directory without file
+filePathEditor //to assign the path to the texture files
+
+//////////////////////////////////////////////////
+
+stringRemovePrefix //removes front end string
+endString //returns last characters of a string
+///
+
+
+
+
+//fileDialog2 -ds 2 -fm 3 -cap "Select A Folder" -okc "Run";
+*/
+
+//for($q =0; $q < `size($selectedObjects[])`;$q ++){
+//sets -e -forceElement ($shaderNam + "_sg") $selectedObjects[$q];
+//}
