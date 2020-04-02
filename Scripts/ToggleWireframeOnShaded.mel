@@ -1,0 +1,6 @@
+string $selectedPanel = `getPanel -withFocus`;
+int $shadedWireState = `modelEditor -q -wos $selectedPanel`;
+if(`modelEditor -ex $selectedPanel`)
+{
+setWireframeOnShadedOption (!$shadedWireState) $selectedPanel;
+}

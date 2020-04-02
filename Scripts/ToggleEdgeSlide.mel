@@ -1,0 +1,9 @@
+if (`xformConstraint -query -type` == "none") {
+xformConstraint -type edge;
+}
+
+else{
+xformConstraint -type none;
+}
+
+closeNodeEditorEd hyperShadePrimaryNodeEditor;

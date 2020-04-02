@@ -1,0 +1,23 @@
+//gets current panel under mouse//
+$currentPanel = `getPanel -up`;
+//clears current popup and sets stuff--this is what maya generates when you create a MM hotkey//
+if (`popupMenu -exists tempMM`) { deleteUI tempMM; }
+popupMenu -button 1 -ctl false -alt false -allowOptionBoxes true -parent `findPanelPopupParent` -mm 1 tempMM;
+
+//decides which menu//
+if (startsWith ($currentPanel, "modelPanel")){
+	source "menu_zGeneral"";
+	}
+else if (startsWith ($currentPanel, "hyperShadePanel")){
+	source "menu_zHypershade"";
+	}
+else if (startsWith ($currentPanel, "polyTexturePlacementPanel")){
+	source "menu_zUvEditor"";
+	}
+else{
+	source "menu_zGeneral";
+	}
+	
+	
+	
+	//sets -edit -forceElement  vrayDisplacement1 pPlane2 ;

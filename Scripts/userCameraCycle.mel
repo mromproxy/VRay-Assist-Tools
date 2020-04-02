@@ -1,0 +1,27 @@
+//checks if this is the first pass, and if so, sets starting Values//
+string $defaultCamList[] = {"persp", "top", "front", "side"};
+int $camCount = $camCount;
+string $existingCams[] = `listCameras -p`;
+string $cycleCams[] = stringArrayRemove ($defaultCamList, $existingCams);
+string $lastCycleCams[] = $lastCycleCams;
+
+//Defines a list of perspective Cameras and trims it to non-default ones//
+string $existingCams[] = `listCameras -p`;
+string $cycleCams[] = stringArrayRemove ($defaultCamList, $existingCams);
+
+//checks if the list has changed, and if so, it updates the count so the cycle continues//
+if(size($cycleCams) != size($lastCycleCams) && $camCount < 1){
+	int $camCount = stringArrayFind($lastCycleCams[$camCount] , 0 , $cycleCams);
+	if ($camCount == -1){ $camCount +=1;}
+	}
+if( $camCount == size($cycleCams)){ $camCount = 0;}
+//finds the current active viewport, and changes the camera//
+string $current_viewport = `getPanel -wf`;
+lookThroughModelPanel $cycleCams[$camCount] $current_viewport;
+
+//records the last list used and increments the count//
+string $lastCycleCams[] = $cycleCams;
+$camCount += 1;
+
+//an extra print line to clear out any warnings//
+print " ";

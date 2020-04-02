@@ -1,0 +1,9 @@
+//This turns the entire wireframe vis off on a global scale. You'll only be able to see selected faces and edges as well as vertices//
+
+if (`displayPref -q -wsa` == "none") {
+displayPref -wsa full;
+}
+
+else{
+displayPref -wsa none;
+}

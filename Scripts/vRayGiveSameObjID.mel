@@ -1,0 +1,12 @@
+string $objName[] = `ls -long -selection`;
+string $objShapeName[] = `pickWalk -d down $objName`;
+int $curCountOBJID = $curCountOBJID + 1;
+int $prevCountOBJID = $curCountOBJID - 1;
+
+
+
+
+for( $i=0; $i < size($objName); $i++){
+	vray addAttributesFromGroup $objName[$i] vray_objectID 1;
+	setAttr ($objName[$i] + ".vrayObjectID") (1 + $prevCountOBJID);
+	}

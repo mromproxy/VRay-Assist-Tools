@@ -1,0 +1,6 @@
+string $currentViewport = `getPanel -up`; 
+string $currentViewportCamera[] = `getPanelCamera $currentViewport`;
+select -clear;
+select -add $currentViewportCamera[0];
+pickWalk -d up;
+print "";

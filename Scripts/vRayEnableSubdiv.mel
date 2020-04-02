@@ -1,0 +1,11 @@
+string $objName[] = `ls -long -selection`;
+string $objShapeName[] = `pickWalk -d down $objName`;
+
+
+for( $i=0; $i < size($objShapeName); $i++){
+	
+vray addAttributesFromGroup $objShapeName[$i] vray_subdivision 1;
+vray addAttributesFromGroup $objShapeName[$i] vray_subquality 1;
+setAttr ($objShapeName[$i] + ".vraySubdivUVs") 0;
+
+	}

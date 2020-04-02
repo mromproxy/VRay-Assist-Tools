@@ -1,0 +1,8 @@
+string $objName[] = `ls -long -selection`;
+float $bbY =  -.5 * `getAttr ($objName[0] + ".boundingBoxSizeY")`;
+
+xform -cp;
+xform -ws -r -pivots  0 $bbY 0;
+
+//performBakeCustomToolPivot 0;
+//xform -ws -wd -t  0 0 0;

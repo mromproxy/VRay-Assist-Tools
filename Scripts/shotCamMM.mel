@@ -1,0 +1,2 @@
+string $current_viewport = `getPanel -wf`;
+lookThroughModelPanel shotCam $current_viewport;

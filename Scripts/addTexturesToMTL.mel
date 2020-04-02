@@ -1,0 +1,136 @@
+
+
+/////////////////////////////////////////////////////////////////////////////////////////
+
+//USER DEFINED VARIABLES//
+//creates a list of names to make and connect// //USE THESE NAMING CONVENTIONS: _DIF , _SPEC , _GLOSS , _BUMP , _NORM , _DISP
+string $mapName[] = {"_DIF", "_SPEC", "_GLOSS", "_BUMP", "_DISP"};
+string $mapFileType = ".png";
+
+
+int $filePathToggle = 0;
+
+// filepath expects sourceimages\Textures\objectName\objName_mapName.mapFileType //
+
+/////////////////////////////////////////////////////////////////////////////////////////
+
+
+
+
+
+
+
+
+
+
+
+
+
+//creates a list of variables to connect between the file nodes and p2d node//
+string $p2dVar[] = {".coverage", ".translateFrame", ".rotateFrame", ".mirrorU", ".mirrorV", ".stagger", ".wrapU", ".wrapV", ".repeatUV", ".offset", ".rotateUV", ".noiseUV", ".vertexUvOne", ".vertexUvTwo", ".vertexUvThree", ".vertexCameraOne", ".outUV", ".outUvFilterSize"};
+string $textVar[] = {".coverage", ".translateFrame", ".rotateFrame", ".mirrorU", ".mirrorV", ".stagger", ".wrapU", ".wrapV", ".repeatUV", ".offset", ".rotateUV", ".noiseUV", ".vertexUvOne", ".vertexUvTwo", ".vertexUvThree", ".vertexCameraOne", ".uv", ".uvFilterSize"};
+
+//Gets short and long name of selected mtl//
+string $objSN[] = `ls -shortNames -selection`;
+string $objLN[] = `ls -long -selection`;
+string $objFN[] = `ls -shortNames -selection`;
+
+
+for( $mtl = 0; $mtl < size($objSN); $mtl++){
+
+int $lenFN = size($objFN[$mtl]);
+string $objEndN = `substring $objSN[$mtl] ($lenFN - 3) $lenFN`;
+//removes _mtl tag from name if present//
+if( `tolower $objEndN` == "_mtl"){
+	$objSN[$mtl] = `substring $objSN[$mtl] 1 ($lenFN - 4)`;
+	}
+	//Gets the shadingGroup name//
+string $objSG[] = `connectionInfo -dfs ($objFN[$mtl] +".outColor")`;
+
+int $lenSG = size($objSG[0]);
+int $attrStart = 1;
+string $searchFor = ".";
+
+for( $k = $lenSG; $k > 1; $k --){
+	if(`substring $objSG[0] $k $k` == "."){
+		$attrStart = $k;
+		}
+		}
+$objSG[0] = `substring $objSG[0] 1 ($attrStart -1)`;
+$lenSG = size($objSG[0]);
+//end get shadingGroupName//
+
+//rename SG?//
+rename $objSG[0] ($objSN[$mtl] + "_SG");
+$objSG[0] = ($objSN[$mtl] + "_SG");
+//creates the p2d node//
+shadingNode -asTexture -isColorManaged -n ($objSN[$mtl] + "_P2D") place2dTexture;
+
+
+
+//creates file nodes//
+for($j = 0; $j < `size($mapName)`; $j++){
+	//base gen and setting//
+shadingNode -asTexture -isColorManaged -n ($objSN[$mtl] + $mapName[$j]) file;
+	//turns teh filter off//
+setAttr ($objSN[$mtl] + $mapName[$j] + ".filterType") 0;
+	//This sets the file path//
+if($filePathToggle == 1){
+	////////////////////////////////////////////EDIT THIS LINE TO CHANGE THE PATH PATTERN///////////////////////////////////////
+setAttr ($objSN[$mtl] + $mapName[$j] + ".fileTextureName") -type "string" ("sourceimages\\Textures\\" + $objSN[$mtl] + "\\" + $objSN[$mtl] + $mapName[$j] + $mapFileType);
+}
+	//specialized connections//
+
+if($mapName[$j] == "_DIF"){
+setAttr ($objSN[$mtl] + $mapName[$j] + ".colorSpace") -type "string" "sRGB";
+connectAttr -f ($objSN[$mtl] + $mapName[$j] + ".outColor") ($objFN[$mtl] + ".diffuseColor");
+}
+
+if($mapName[$j] == "_SPEC"){
+setAttr ($objSN[$mtl] + $mapName[$j] + ".colorSpace") -type "string" "Raw";
+connectAttr -f ($objSN[$mtl] + $mapName[$j] + ".outColor") ($objFN[$mtl] + ".reflectionColor");
+}
+
+if($mapName[$j] == "_BUMP"){
+setAttr ($objSN[$mtl] + $mapName[$j] + ".colorSpace") -type "string" "Raw";
+connectAttr -f ($objSN[$mtl] + $mapName[$j] + ".outColor") ($objFN[$mtl] + ".bumpMap");
+}
+
+if($mapName[$j] == "_NORM"){
+setAttr ($objSN[$mtl] + $mapName[$j] + ".colorSpace") -type "string" "sRGB";
+connectAttr -f ($objSN[$mtl] + $mapName[$j] + ".outColor") ($objFN[$mtl] + ".bumpMap");
+setAttr ($objSN[$mtl] + "_mtl" + ".bumpMult") 1;
+setAttr ($objSN[$mtl] + "_mtl" + ".bumpMapType") 1;
+}
+
+if($mapName[$j] == "_GLOSS"){
+setAttr ($objSN[$mtl] + $mapName[$j] + ".colorSpace") -type "string" "Raw";
+shadingNode -asUtility -n ($objSN[$mtl] + $mapName[$j] + "_hsv") remapHsv;
+setAttr ($objSN[$mtl] + $mapName[$j] + "_hsv" + ".value[1].value_FloatValue") `getAttr ($objFN[$mtl] + ".reflectionGlossiness")`;
+connectAttr -f ($objSN[$mtl] + $mapName[$j] + ".outColor") ($objSN[$mtl] + $mapName[$j] + "_hsv" + ".color");
+connectAttr -f ($objSN[$mtl] + $mapName[$j] + "_hsv" + ".outColorR") ($objFN[$mtl] + ".reflectionGlossiness");
+}
+
+
+if($mapName[$j] == "_DISP"){
+setAttr ($objSN[$mtl] + $mapName[$j] + ".colorSpace") -type "string" "Raw";
+//creates and connects disp Node
+shadingNode -asUtility -n ($objSN[$mtl] + "_dispShader") displacementShader;
+connectAttr -f ($objSN[$mtl] + $mapName[$j] + ".outAlpha") ($objSN[$mtl] + "_dispShader.displacement");
+connectAttr -f ($objSN[$mtl] + "_dispShader.displacement") ($objSG[0] + ".displacementShader");
+setAttr ($objSN[$mtl] + $mapName[$j] +".alphaIsLuminance") true;
+//sets an expression on the alphaOffset to equal -.5 the Gain
+expression -s ($objSN[$mtl] + $mapName[$j] + ".alphaOffset = " + $objSN[$mtl] + $mapName[$j] + ".alphaGain * -.5;") -o ($objSN[$mtl] + $mapName[$j]) -alwaysEvaluate 1 -unitConversion all;
+}
+
+//connects the file node to the p2d node//
+for ($i = 0; $i < `size($p2dVar)`; $i++){
+connectAttr -f ($objSN[$mtl] + "_P2D" + $p2dVar[$i]) ($objSN[$mtl] + $mapName[$j] + $textVar[$i]);
+}
+}
+}
+//end create file nodes//
+
+
+
+

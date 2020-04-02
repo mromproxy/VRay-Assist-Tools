@@ -1,0 +1,4 @@
+//Toggle XRay//
+//it logs the current viewport and then inverst the XRay value//
+string $currentViewport = `getPanel -withFocus`;
+modelEditor -edit -xray (!`modelEditor -q -xray $currentViewport`) $current_viewport;

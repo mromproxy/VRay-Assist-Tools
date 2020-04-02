@@ -1,0 +1,3 @@
+string $selName[] = `ls -shortNames -selection`;
+if(`attributeExists "alphaOffset" $selName[0]` == 1){expression -s ($selName[0] + ".alphaOffset = " + $selName[0] + ".alphaGain * -.5;") -o $selName[0] -alwaysEvaluate 1 -unitConversion all;}
+if(`attributeExists "vrayDisplacementShift" $selName[0]` == 1){expression -s ($selName[0] + ".vrayDisplacementShift = " + $selName[0] + ".vrayDisplacementAmount * -.5;") -o $selName[0] -alwaysEvaluate 1 -unitConversion all;}

@@ -1,0 +1,33 @@
+string $selName[] = `ls -shortNames -selection`;
+	for($x = 0; $x < `size($selName)`; $x++){
+		int $selNameLen = `size($selName[$x])`;
+		$selName[$x] = `substring $selName[$x] 1 ($selNameLen -3)`;
+		//print $selName[$x];
+		//print "\n";
+		}
+for($y=0; $y < `size($selName)`; $y++){
+	//shadingNode -asShader -n ($selName[$y] + "_bumpMtl") VRayBumpMtl;
+	//connectAttr -f ($selName[$y] + "_bumpMtl.outColor") ($selName[$y] + "_sg.surfaceShader");
+	//connectAttr -f ($selName[$y] + "_mtl.outColor") ($selName[$y] + "_bumpMtl.base_material");
+	//connectAttr -f ($selName[$y] + "_Height.outColor") ($selName[$y] + "_bumpMtl.bumpMap");
+	setAttr ($selName[$y] + "_bumpMtl.bumpMult") .5;
+	//setAttr ($selName[$y] + "_bumpMtl.bumpShadows") 1;
+
+
+}
+
+
+
+
+
+
+/*
+connectAttr -f ($textureSetName + "_" + $fileNodeName + ".outColor") ($textureSetName + "_" + $attrNames[0] + "_gc.value");
+
+shadingNode -asShader VRayBumpMtl;
+connectAttr -f ($selName[$y] + "_bumpMtl.outColor") ($selName[$y] + "_sg.surfaceShader");
+connectAttr -f ($selName[$y] + "_mtl.outColor") ($selName[$y] + "_bumpMtl.base_material");
+*/
+
+//everything has a leading name so you can predict the new name--less impressive.
+
