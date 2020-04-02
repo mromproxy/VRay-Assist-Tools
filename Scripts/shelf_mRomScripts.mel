@@ -1,0 +1,569 @@
+global proc shelf_mRomScripts () {
+    global string $gBuffStr;
+    global string $gBuffStr0;
+    global string $gBuffStr1;
+
+
+    shelfButton
+        -enableCommandRepeat 1
+        -enable 1
+        -width 35
+        -height 35
+        -manage 1
+        -visible 1
+        -preventOverride 0
+        -annotation "addDispExp" 
+        -enableBackground 0
+        -backgroundColor 0 0 0 
+        -highlightColor 0.321569 0.521569 0.65098 
+        -align "center" 
+        -label "string $selName[] = `ls -shortNames -selection`;\nif(`attributeEx..." 
+        -labelOffset 0
+        -rotation 0
+        -flipX 0
+        -flipY 0
+        -useAlpha 1
+        -font "plainLabelFont" 
+        -imageOverlayLabel "addDispExp" 
+        -overlayLabelColor 0.8 0.8 0.8 
+        -overlayLabelBackColor 0 0 0 0.5 
+        -image "commandButton.png" 
+        -image1 "commandButton.png" 
+        -style "iconOnly" 
+        -marginWidth 1
+        -marginHeight 1
+        -command "string $selName[] = `ls -shortNames -selection`;\nif(`attributeExists \"alphaOffset\" $selName[0]` == 1){expression -s ($selName[0] + \".alphaOffset = \" + $selName[0] + \".alphaGain * -.5;\") -o $selName[0] -alwaysEvaluate 1 -unitConversion all;}\nif(`attributeExists \"vrayDisplacementShift\" $selName[0]` == 1){expression -s ($selName[0] + \".vrayDisplacementShift = \" + $selName[0] + \".vrayDisplacementAmount * -.5;\") -o $selName[0] -alwaysEvaluate 1 -unitConversion all;}\n" 
+        -sourceType "mel" 
+        -commandRepeatable 1
+        -flat 1
+    ;
+    shelfButton
+        -enableCommandRepeat 1
+        -enable 1
+        -width 35
+        -height 35
+        -manage 1
+        -visible 1
+        -preventOverride 0
+        -annotation "addTexturesToMTL" 
+        -enableBackground 0
+        -backgroundColor 0 0 0 
+        -highlightColor 0.321569 0.521569 0.65098 
+        -align "center" 
+        -label "\n\n////////////////////////////////..." 
+        -labelOffset 0
+        -rotation 0
+        -flipX 0
+        -flipY 0
+        -useAlpha 1
+        -font "plainLabelFont" 
+        -imageOverlayLabel "addTexturesToMTL" 
+        -overlayLabelColor 0.8 0.8 0.8 
+        -overlayLabelBackColor 0 0 0 0.5 
+        -image "commandButton.png" 
+        -image1 "commandButton.png" 
+        -style "iconOnly" 
+        -marginWidth 1
+        -marginHeight 1
+        -command "\n\n/////////////////////////////////////////////\n\n//USER DEFINED VARIABLES//\n//creates a list of names to make and connect// //USE THESE NAMING CONVENTIONS: _DIF , _SPEC , _GLOSS , _BUMP , _NORM , _DISP\nstring $mapName[] = {\"_DIF\", \"_SPEC\", \"_GLOSS\", \"_BUMP\", \"_DISP\"};\nstring $mapFileType = \".png\";\n\n\nint $filePathToggle = 0;\n\n// filepath expects sourceimages\\Textures\\objectName\\objName_mapName.mapFileType //\n\n/////////////////////////////////////////////\n\n\n\n\n\n\n\n\n\n\n\n\n\n//creates a list of variables to connect between the file nodes and p2d node//\nstring $p2dVar[] = {\".coverage\", \".translateFrame\", \".rotateFrame\", \".mirrorU\", \".mirrorV\", \".stagger\", \".wrapU\", \".wrapV\", \".repeatUV\", \".offset\", \".rotateUV\", \".noiseUV\", \".vertexUvOne\", \".vertexUvTwo\", \".vertexUvThree\", \".vertexCameraOne\", \".outUV\", \".outUvFilterSize\"};\nstring $textVar[] = {\".coverage\", \".translateFrame\", \".rotateFrame\", \".mirrorU\", \".mirrorV\", \".stagger\", \".wrapU\", \".wrapV\", \".repeatUV\", \".offset\", \".rotateUV\", \".noiseUV\", \".vertexUvOne\", \".vertexUvTwo\", \".vertexUvThree\", \".vertexCameraOne\", \".uv\", \".uvFilterSize\"};\n\n//Gets short and long name of selected mtl//\nstring $objSN[] = `ls -shortNames -selection`;\nstring $objLN[] = `ls -long -selection`;\nstring $objFN[] = `ls -shortNames -selection`;\n\n\nfor( $mtl = 0; $mtl < size($objSN); $mtl++){\n\nint $lenFN = size($objFN[$mtl]);\nstring $objEndN = `substring $objSN[$mtl] ($lenFN - 3) $lenFN`;\n//removes _mtl tag from name if present//\nif( `tolower $objEndN` == \"_mtl\"){\n\t$objSN[$mtl] = `substring $objSN[$mtl] 1 ($lenFN - 4)`;\n\t}\n\t//Gets the shadingGroup name//\nstring $objSG[] = `connectionInfo -dfs ($objFN[$mtl] +\".outColor\")`;\n\nint $lenSG = size($objSG[0]);\nint $attrStart = 1;\nstring $searchFor = \".\";\n\nfor( $k = $lenSG; $k > 1; $k --){\n\tif(`substring $objSG[0] $k $k` == \".\"){\n\t\t$attrStart = $k;\n\t\t}\n\t\t}\n$objSG[0] = `substring $objSG[0] 1 ($attrStart -1)`;\n$lenSG = size($objSG[0]);\n//end get shadingGroupName//\n\n//rename SG?//\nrename $objSG[0] ($objSN[$mtl] + \"_SG\");\n$objSG[0] = ($objSN[$mtl] + \"_SG\");\n//creates the p2d node//\nshadingNode -asTexture -isColorManaged -n ($objSN[$mtl] + \"_P2D\") place2dTexture;\n\n\n\n//creates file nodes//\nfor($j = 0; $j < `size($mapName)`; $j++){\n\t//base gen and setting//\nshadingNode -asTexture -isColorManaged -n ($objSN[$mtl] + $mapName[$j]) file;\n\t//turns teh filter off//\nsetAttr ($objSN[$mtl] + $mapName[$j] + \".filterType\") 0;\n\t//This sets the file path//\nif($filePathToggle == 1){\n\t//////////////////////EDIT THIS LINE TO CHANGE THE PATH PATTERN/////////////////////\nsetAttr ($objSN[$mtl] + $mapName[$j] + \".fileTextureName\") -type \"string\" (\"sourceimages\\\\Textures\\\\\" + $objSN[$mtl] + \"\\\\\" + $objSN[$mtl] + $mapName[$j] + $mapFileType);\n}\n\t//specialized connections//\n\nif($mapName[$j] == \"_DIF\"){\nsetAttr ($objSN[$mtl] + $mapName[$j] + \".colorSpace\") -type \"string\" \"sRGB\";\nconnectAttr -f ($objSN[$mtl] + $mapName[$j] + \".outColor\") ($objFN[$mtl] + \".diffuseColor\");\n}\n\nif($mapName[$j] == \"_SPEC\"){\nsetAttr ($objSN[$mtl] + $mapName[$j] + \".colorSpace\") -type \"string\" \"Raw\";\nconnectAttr -f ($objSN[$mtl] + $mapName[$j] + \".outColor\") ($objFN[$mtl] + \".reflectionColor\");\n}\n\nif($mapName[$j] == \"_BUMP\"){\nsetAttr ($objSN[$mtl] + $mapName[$j] + \".colorSpace\") -type \"string\" \"Raw\";\nconnectAttr -f ($objSN[$mtl] + $mapName[$j] + \".outColor\") ($objFN[$mtl] + \".bumpMap\");\n}\n\nif($mapName[$j] == \"_NORM\"){\nsetAttr ($objSN[$mtl] + $mapName[$j] + \".colorSpace\") -type \"string\" \"sRGB\";\nconnectAttr -f ($objSN[$mtl] + $mapName[$j] + \".outColor\") ($objFN[$mtl] + \".bumpMap\");\nsetAttr ($objSN[$mtl] + \"_mtl\" + \".bumpMult\") 1;\nsetAttr ($objSN[$mtl] + \"_mtl\" + \".bumpMapType\") 1;\n}\n\nif($mapName[$j] == \"_GLOSS\"){\nsetAttr ($objSN[$mtl] + $mapName[$j] + \".colorSpace\") -type \"string\" \"Raw\";\nshadingNode -asUtility -n ($objSN[$mtl] + $mapName[$j] + \"_hsv\") remapHsv;\nsetAttr ($objSN[$mtl] + $mapName[$j] + \"_hsv\" + \".value[1].value_FloatValue\") `getAttr ($objFN[$mtl] + \".reflectionGlossiness\")`;\nconnectAttr -f ($objSN[$mtl] + $mapName[$j] + \".outColor\") ($objSN[$mtl] + $mapName[$j] + \"_hsv\" + \".color\");\nconnectAttr -f ($objSN[$mtl] + $mapName[$j] + \"_hsv\" + \".outColorR\") ($objFN[$mtl] + \".reflectionGlossiness\");\n}\n\n\nif($mapName[$j] == \"_DISP\"){\nsetAttr ($objSN[$mtl] + $mapName[$j] + \".colorSpace\") -type \"string\" \"Raw\";\n//creates and connects disp Node\nshadingNode -asUtility -n ($objSN[$mtl] + \"_dispShader\") displacementShader;\nconnectAttr -f ($objSN[$mtl] + $mapName[$j] + \".outAlpha\") ($objSN[$mtl] + \"_dispShader.displacement\");\nconnectAttr -f ($objSN[$mtl] + \"_dispShader.displacement\") ($objSG[0] + \".displacementShader\");\nsetAttr ($objSN[$mtl] + $mapName[$j] +\".alphaIsLuminance\") true;\n//sets an expression on the alphaOffset to equal -.5 the Gain\nexpression -s ($objSN[$mtl] + $mapName[$j] + \".alphaOffset = \" + $objSN[$mtl] + $mapName[$j] + \".alphaGain * -.5;\") -o ($objSN[$mtl] + $mapName[$j]) -alwaysEvaluate 1 -unitConversion all;\n}\n\n//connects the file node to the p2d node//\nfor ($i = 0; $i < `size($p2dVar)`; $i++){\nconnectAttr -f ($objSN[$mtl] + \"_P2D\" + $p2dVar[$i]) ($objSN[$mtl] + $mapName[$j] + $textVar[$i]);\n}\n}\n}\n//end create file nodes//" 
+        -sourceType "mel" 
+        -commandRepeatable 1
+        -flat 1
+    ;
+    shelfButton
+        -enableCommandRepeat 1
+        -enable 1
+        -width 35
+        -height 35
+        -manage 1
+        -visible 1
+        -preventOverride 0
+        -annotation "contextAwareMM_Base" 
+        -enableBackground 0
+        -backgroundColor 0 0 0 
+        -highlightColor 0.321569 0.521569 0.65098 
+        -align "center" 
+        -label "//gets current panel under mouse//\n$currentPanel = `getPanel -up..." 
+        -labelOffset 0
+        -rotation 0
+        -flipX 0
+        -flipY 0
+        -useAlpha 1
+        -font "plainLabelFont" 
+        -imageOverlayLabel "contextAwareMM_Base" 
+        -overlayLabelColor 0.8 0.8 0.8 
+        -overlayLabelBackColor 0 0 0 0.5 
+        -image "commandButton.png" 
+        -image1 "commandButton.png" 
+        -style "iconOnly" 
+        -marginWidth 1
+        -marginHeight 1
+        -command "//gets current panel under mouse//\n$currentPanel = `getPanel -up`;\n//clears current popup and sets stuff--this is what maya generates when you create a MM hotkey//\nif (`popupMenu -exists tempMM`) { deleteUI tempMM; }\npopupMenu -button 1 -ctl false -alt false -allowOptionBoxes true -parent `findPanelPopupParent` -mm 1 tempMM;\n\n//decides which menu//\nif (startsWith ($currentPanel, \"modelPanel\")){\n\tsource \"menu_zGeneral\"\";\n\t}\nelse if (startsWith ($currentPanel, \"hyperShadePanel\")){\n\tsource \"menu_zHypershade\"\";\n\t}\nelse if (startsWith ($currentPanel, \"polyTexturePlacementPanel\")){\n\tsource \"menu_zUvEditor\"\";\n\t}\nelse{\n\tsource \"menu_zGeneral\";\n\t}\n\t\n\t\n\t\n\t//sets -edit -forceElement  vrayDisplacement1 pPlane2 ;" 
+        -sourceType "mel" 
+        -commandRepeatable 1
+        -flat 1
+    ;
+    shelfButton
+        -enableCommandRepeat 1
+        -enable 1
+        -width 35
+        -height 35
+        -manage 1
+        -visible 1
+        -preventOverride 0
+        -annotation "CreateVRayDisp" 
+        -enableBackground 0
+        -backgroundColor 0 0 0 
+        -highlightColor 0.321569 0.521569 0.65098 
+        -align "center" 
+        -label "string $selectedObj[] = `ls -selection`;\ncreateNode VRayDisplace..." 
+        -labelOffset 0
+        -rotation 0
+        -flipX 0
+        -flipY 0
+        -useAlpha 1
+        -font "plainLabelFont" 
+        -imageOverlayLabel "CreateVRayDisp" 
+        -overlayLabelColor 0.8 0.8 0.8 
+        -overlayLabelBackColor 0 0 0 0.5 
+        -image "commandButton.png" 
+        -image1 "commandButton.png" 
+        -style "iconOnly" 
+        -marginWidth 1
+        -marginHeight 1
+        -command "string $selectedObj[] = `ls -selection`;\ncreateNode VRayDisplacement;\nstring $selectedName[] = `ls -selection`;\nvray addAttributesFromGroup $selectedName[0] vray_displacement 1;\nvray addAttributesFromGroup $selectedName[0] vray_subdivision 1;\nvray addAttributesFromGroup $selectedName[0] vray_opensubdiv 1;\nexpression -s ($selectedName[0] + \".vrayDisplacementShift = -.5 * \" + $selectedName[0] + \".vrayDisplacementAmount;\")  -o $selectedName[0] -ae 1 -uc all;\nsets -edit -forceElement  $selectedName[0] $selectedObj;" 
+        -sourceType "mel" 
+        -commandRepeatable 1
+        -flat 1
+    ;
+    shelfButton
+        -enableCommandRepeat 1
+        -enable 1
+        -width 35
+        -height 35
+        -manage 1
+        -visible 1
+        -preventOverride 0
+        -annotation "PMc_batchCurveColor" 
+        -enableBackground 0
+        -backgroundColor 0 0 0 
+        -highlightColor 0.321569 0.521569 0.65098 
+        -align "center" 
+        -label "// select curves and execute\n//9 - fuscia\n//10 - brown\n//12 - br..." 
+        -labelOffset 0
+        -rotation 0
+        -flipX 0
+        -flipY 0
+        -useAlpha 1
+        -font "plainLabelFont" 
+        -imageOverlayLabel "PMc_batchCurveColor" 
+        -overlayLabelColor 0.8 0.8 0.8 
+        -overlayLabelBackColor 0 0 0 0.5 
+        -image "commandButton.png" 
+        -image1 "commandButton.png" 
+        -style "iconOnly" 
+        -marginWidth 1
+        -marginHeight 1
+        -command "// select curves and execute\n//9 - fuscia\n//10 - brown\n//12 - brown\n//13 - red\n//14 - bright green\n//15 - blue\n//16 - white\n//17 - yellow\n\nint $myColor = 18;\n\nstring $items[] = `ls -long -sl` ;\n\nif(size($items) == 0)\n    print \"Please select something.\" ;\n\nfor ($i=0; $i<(size($items)); $i++)\n{\n// get full name of shapeNode, including path\n    string $objects[] = `listRelatives -s -path $items[$i]`;\n    \n// set colors\n    setAttr ($objects[0] + \".overrideEnabled\") 1;\n    setAttr ($objects[0] + \".overrideColor\") $myColor ;" 
+        -sourceType "mel" 
+        -commandRepeatable 1
+        -flat 1
+    ;
+    shelfButton
+        -enableCommandRepeat 1
+        -enable 1
+        -width 35
+        -height 35
+        -manage 1
+        -visible 1
+        -preventOverride 0
+        -annotation "selectCamera" 
+        -enableBackground 0
+        -backgroundColor 0 0 0 
+        -highlightColor 0.321569 0.521569 0.65098 
+        -align "center" 
+        -label "string $currentViewport = `getPanel -up`; \nstring $currentViewpo..." 
+        -labelOffset 0
+        -rotation 0
+        -flipX 0
+        -flipY 0
+        -useAlpha 1
+        -font "plainLabelFont" 
+        -imageOverlayLabel "selectCamera" 
+        -overlayLabelColor 0.8 0.8 0.8 
+        -overlayLabelBackColor 0 0 0 0.5 
+        -image "commandButton.png" 
+        -image1 "commandButton.png" 
+        -style "iconOnly" 
+        -marginWidth 1
+        -marginHeight 1
+        -command "string $currentViewport = `getPanel -up`; \nstring $currentViewportCamera[] = `getPanelCamera $currentViewport`;\nselect -clear;\nselect -add $currentViewportCamera[0];\npickWalk -d up;\nprint \"\";" 
+        -sourceType "mel" 
+        -commandRepeatable 1
+        -flat 1
+    ;
+    shelfButton
+        -enableCommandRepeat 1
+        -enable 1
+        -width 35
+        -height 35
+        -manage 1
+        -visible 1
+        -preventOverride 0
+        -annotation "shotCamMM" 
+        -enableBackground 0
+        -backgroundColor 0 0 0 
+        -highlightColor 0.321569 0.521569 0.65098 
+        -align "center" 
+        -label "string $current_viewport = `getPanel -wf`;\nlookThroughModelPanel..." 
+        -labelOffset 0
+        -rotation 0
+        -flipX 0
+        -flipY 0
+        -useAlpha 1
+        -font "plainLabelFont" 
+        -imageOverlayLabel "shotCamMM" 
+        -overlayLabelColor 0.8 0.8 0.8 
+        -overlayLabelBackColor 0 0 0 0.5 
+        -image "commandButton.png" 
+        -image1 "commandButton.png" 
+        -style "iconOnly" 
+        -marginWidth 1
+        -marginHeight 1
+        -command "string $current_viewport = `getPanel -wf`;\nlookThroughModelPanel shotCam $current_viewport;" 
+        -sourceType "mel" 
+        -commandRepeatable 1
+        -flat 1
+    ;
+    shelfButton
+        -enableCommandRepeat 1
+        -enable 1
+        -width 35
+        -height 35
+        -manage 1
+        -visible 1
+        -preventOverride 0
+        -annotation "snapPivotObjBottom" 
+        -enableBackground 0
+        -backgroundColor 0 0 0 
+        -highlightColor 0.321569 0.521569 0.65098 
+        -align "center" 
+        -label "string $objName[] = `ls -long -selection`;\nfloat $bbY =  -.5 * `..." 
+        -labelOffset 0
+        -rotation 0
+        -flipX 0
+        -flipY 0
+        -useAlpha 1
+        -font "plainLabelFont" 
+        -imageOverlayLabel "snapPivotObjBottom" 
+        -overlayLabelColor 0.8 0.8 0.8 
+        -overlayLabelBackColor 0 0 0 0.5 
+        -image "commandButton.png" 
+        -image1 "commandButton.png" 
+        -style "iconOnly" 
+        -marginWidth 1
+        -marginHeight 1
+        -command "string $objName[] = `ls -long -selection`;\nfloat $bbY =  -.5 * `getAttr ($objName[0] + \".boundingBoxSizeY\")`;\n\nxform -cp;\nxform -ws -r -pivots  0 $bbY 0;\n\n//performBakeCustomToolPivot 0;\n//xform -ws -wd -t  0 0 0;" 
+        -sourceType "mel" 
+        -commandRepeatable 1
+        -flat 1
+    ;
+    shelfButton
+        -enableCommandRepeat 1
+        -enable 1
+        -width 35
+        -height 35
+        -manage 1
+        -visible 1
+        -preventOverride 0
+        -annotation "ToggleEdgeSlide" 
+        -enableBackground 0
+        -backgroundColor 0 0 0 
+        -highlightColor 0.321569 0.521569 0.65098 
+        -align "center" 
+        -label "if (`xformConstraint -query -type` == \"none\") {\nxformConstraint ..." 
+        -labelOffset 0
+        -rotation 0
+        -flipX 0
+        -flipY 0
+        -useAlpha 1
+        -font "plainLabelFont" 
+        -imageOverlayLabel "ToggleEdgeSlide" 
+        -overlayLabelColor 0.8 0.8 0.8 
+        -overlayLabelBackColor 0 0 0 0.5 
+        -image "commandButton.png" 
+        -image1 "commandButton.png" 
+        -style "iconOnly" 
+        -marginWidth 1
+        -marginHeight 1
+        -command "if (`xformConstraint -query -type` == \"none\") {\nxformConstraint -type edge;\n}\n\nelse{\nxformConstraint -type none;\n}\n\ncloseNodeEditorEd hyperShadePrimaryNodeEditor;\n" 
+        -sourceType "mel" 
+        -commandRepeatable 1
+        -flat 1
+    ;
+    shelfButton
+        -enableCommandRepeat 1
+        -enable 1
+        -width 35
+        -height 35
+        -manage 1
+        -visible 1
+        -preventOverride 0
+        -annotation "ToggleWireframeGlobal" 
+        -enableBackground 0
+        -backgroundColor 0 0 0 
+        -highlightColor 0.321569 0.521569 0.65098 
+        -align "center" 
+        -label "//This turns the entire wireframe vis off on a global scale. You..." 
+        -labelOffset 0
+        -rotation 0
+        -flipX 0
+        -flipY 0
+        -useAlpha 1
+        -font "plainLabelFont" 
+        -imageOverlayLabel "ToggleWireframeGlobal" 
+        -overlayLabelColor 0.8 0.8 0.8 
+        -overlayLabelBackColor 0 0 0 0.5 
+        -image "commandButton.png" 
+        -image1 "commandButton.png" 
+        -style "iconOnly" 
+        -marginWidth 1
+        -marginHeight 1
+        -command "//This turns the entire wireframe vis off on a global scale. You'll only be able to see selected faces and edges as well as vertices//\n\nif (`displayPref -q -wsa` == \"none\") {\ndisplayPref -wsa full;\n}\n\nelse{\ndisplayPref -wsa none;\n}" 
+        -sourceType "mel" 
+        -commandRepeatable 1
+        -flat 1
+    ;
+    shelfButton
+        -enableCommandRepeat 1
+        -enable 1
+        -width 35
+        -height 35
+        -manage 1
+        -visible 1
+        -preventOverride 0
+        -annotation "ToggleWireframeOnShaded" 
+        -enableBackground 0
+        -backgroundColor 0 0 0 
+        -highlightColor 0.321569 0.521569 0.65098 
+        -align "center" 
+        -label "string $selectedPanel = `getPanel -withFocus`;\nint $shadedWireSt..." 
+        -labelOffset 0
+        -rotation 0
+        -flipX 0
+        -flipY 0
+        -useAlpha 1
+        -font "plainLabelFont" 
+        -imageOverlayLabel "ToggleWireframeOnShaded" 
+        -overlayLabelColor 0.8 0.8 0.8 
+        -overlayLabelBackColor 0 0 0 0.5 
+        -image "commandButton.png" 
+        -image1 "commandButton.png" 
+        -style "iconOnly" 
+        -marginWidth 1
+        -marginHeight 1
+        -command "string $selectedPanel = `getPanel -withFocus`;\nint $shadedWireState = `modelEditor -q -wos $selectedPanel`;\nif(`modelEditor -ex $selectedPanel`)\n{\nsetWireframeOnShadedOption (!$shadedWireState) $selectedPanel;\n}" 
+        -sourceType "mel" 
+        -commandRepeatable 1
+        -flat 1
+    ;
+    shelfButton
+        -enableCommandRepeat 1
+        -enable 1
+        -width 35
+        -height 35
+        -manage 1
+        -visible 1
+        -preventOverride 0
+        -annotation "ToggleXRay" 
+        -enableBackground 0
+        -backgroundColor 0 0 0 
+        -highlightColor 0.321569 0.521569 0.65098 
+        -align "center" 
+        -label "//Toggle XRay//\n//it logs the current viewport and then inverst ..." 
+        -labelOffset 0
+        -rotation 0
+        -flipX 0
+        -flipY 0
+        -useAlpha 1
+        -font "plainLabelFont" 
+        -imageOverlayLabel "ToggleXRay" 
+        -overlayLabelColor 0.8 0.8 0.8 
+        -overlayLabelBackColor 0 0 0 0.5 
+        -image "commandButton.png" 
+        -image1 "commandButton.png" 
+        -style "iconOnly" 
+        -marginWidth 1
+        -marginHeight 1
+        -command "//Toggle XRay//\n//it logs the current viewport and then inverst the XRay value//\nstring $currentViewport = `getPanel -withFocus`;\nmodelEditor -edit -xray (!`modelEditor -q -xray $currentViewport`) $current_viewport;" 
+        -sourceType "mel" 
+        -commandRepeatable 1
+        -flat 1
+    ;
+    shelfButton
+        -enableCommandRepeat 1
+        -enable 1
+        -width 35
+        -height 35
+        -manage 1
+        -visible 1
+        -preventOverride 0
+        -annotation "userCameraCycle" 
+        -enableBackground 0
+        -backgroundColor 0 0 0 
+        -highlightColor 0.321569 0.521569 0.65098 
+        -align "center" 
+        -label "//checks if this is the first pass, and if so, sets starting Val..." 
+        -labelOffset 0
+        -rotation 0
+        -flipX 0
+        -flipY 0
+        -useAlpha 1
+        -font "plainLabelFont" 
+        -imageOverlayLabel "userCameraCycle" 
+        -overlayLabelColor 0.8 0.8 0.8 
+        -overlayLabelBackColor 0 0 0 0.5 
+        -image "commandButton.png" 
+        -image1 "commandButton.png" 
+        -style "iconOnly" 
+        -marginWidth 1
+        -marginHeight 1
+        -command "//checks if this is the first pass, and if so, sets starting Values//\nstring $defaultCamList[] = {\"persp\", \"top\", \"front\", \"side\"};\nint $camCount = $camCount;\nstring $existingCams[] = `listCameras -p`;\nstring $cycleCams[] = stringArrayRemove ($defaultCamList, $existingCams);\nstring $lastCycleCams[] = $lastCycleCams;\n\n//Defines a list of perspective Cameras and trims it to non-default ones//\nstring $existingCams[] = `listCameras -p`;\nstring $cycleCams[] = stringArrayRemove ($defaultCamList, $existingCams);\n\n//checks if the list has changed, and if so, it updates the count so the cycle continues//\nif(size($cycleCams) != size($lastCycleCams) && $camCount < 1){\n\tint $camCount = stringArrayFind($lastCycleCams[$camCount] , 0 , $cycleCams);\n\tif ($camCount == -1){ $camCount +=1;}\n\t}\nif( $camCount == size($cycleCams) || $camCount > size($cycleCams)){ $camCount = 0;}\n\n//finds the current active viewport, and changes the camera//\nstring $current_viewport = `getPanel -wf`;\nlookThroughModelPanel $cycleCams[$camCount] $current_viewport;\n\n//records the last list used and increments the count//\nstring $lastCycleCams[] = $cycleCams;\n$camCount += 1;\n\n//an extra print line to clear out any warnings//\nprint \" \";" 
+        -sourceType "mel" 
+        -commandRepeatable 1
+        -flat 1
+    ;
+    shelfButton
+        -enableCommandRepeat 1
+        -enable 1
+        -width 35
+        -height 35
+        -manage 1
+        -visible 1
+        -preventOverride 0
+        -annotation "vRayEnableSubdiv" 
+        -enableBackground 0
+        -backgroundColor 0 0 0 
+        -highlightColor 0.321569 0.521569 0.65098 
+        -align "center" 
+        -label "string $objName[] = `ls -long -selection`;\nstring $objShapeName[..." 
+        -labelOffset 0
+        -rotation 0
+        -flipX 0
+        -flipY 0
+        -useAlpha 1
+        -font "plainLabelFont" 
+        -imageOverlayLabel "vRayEnableSubdiv" 
+        -overlayLabelColor 0.8 0.8 0.8 
+        -overlayLabelBackColor 0 0 0 0.5 
+        -image "commandButton.png" 
+        -image1 "commandButton.png" 
+        -style "iconOnly" 
+        -marginWidth 1
+        -marginHeight 1
+        -command "string $objName[] = `ls -long -selection`;\nstring $objShapeName[] = `pickWalk -d down $objName`;\n\n\nfor( $i=0; $i < size($objShapeName); $i++){\n\t\nvray addAttributesFromGroup $objShapeName[$i] vray_subdivision 1;\nvray addAttributesFromGroup $objShapeName[$i] vray_opensubdiv 1;\nsetAttr ($objShapeName[$i] + \".vraySubdivUVs\") 0;\n\n\t}" 
+        -sourceType "mel" 
+        -commandRepeatable 1
+        -flat 1
+    ;
+    shelfButton
+        -enableCommandRepeat 1
+        -enable 1
+        -width 35
+        -height 35
+        -manage 1
+        -visible 1
+        -preventOverride 0
+        -annotation "vRayGiveSameObjID" 
+        -enableBackground 0
+        -backgroundColor 0 0 0 
+        -highlightColor 0.321569 0.521569 0.65098 
+        -align "center" 
+        -label "string $objName[] = `ls -long -selection`;\nstring $objShapeName[..." 
+        -labelOffset 0
+        -rotation 0
+        -flipX 0
+        -flipY 0
+        -useAlpha 1
+        -font "plainLabelFont" 
+        -imageOverlayLabel "vRayGiveSameObjID" 
+        -overlayLabelColor 0.8 0.8 0.8 
+        -overlayLabelBackColor 0 0 0 0.5 
+        -image "commandButton.png" 
+        -image1 "commandButton.png" 
+        -style "iconOnly" 
+        -marginWidth 1
+        -marginHeight 1
+        -command "string $objName[] = `ls -long -selection`;\nstring $objShapeName[] = `pickWalk -d down $objName`;\nint $curCountOBJID = $curCountOBJID + 1;\nint $prevCountOBJID = $curCountOBJID - 1;\n\n\n\n\nfor( $i=0; $i < size($objName); $i++){\n\tvray addAttributesFromGroup $objName[$i] vray_objectID 1;\n\tsetAttr ($objName[$i] + \".vrayObjectID\") (1 + $prevCountOBJID);\n\t}" 
+        -sourceType "mel" 
+        -commandRepeatable 1
+        -flat 1
+    ;
+    shelfButton
+        -enableCommandRepeat 1
+        -enable 1
+        -width 35
+        -height 35
+        -manage 1
+        -visible 1
+        -preventOverride 0
+        -annotation "vRayGiveUniqueObjID" 
+        -enableBackground 0
+        -backgroundColor 0 0 0 
+        -highlightColor 0.321569 0.521569 0.65098 
+        -align "center" 
+        -label "string $objName[] = `ls -long -selection`;\nstring $objShapeName[..." 
+        -labelOffset 0
+        -rotation 0
+        -flipX 0
+        -flipY 0
+        -useAlpha 1
+        -font "plainLabelFont" 
+        -imageOverlayLabel "vRayGiveUniqueObjID" 
+        -overlayLabelColor 0.8 0.8 0.8 
+        -overlayLabelBackColor 0 0 0 0.5 
+        -image "commandButton.png" 
+        -image1 "commandButton.png" 
+        -style "iconOnly" 
+        -marginWidth 1
+        -marginHeight 1
+        -command "string $objName[] = `ls -long -selection`;\nstring $objShapeName[] = `pickWalk -d down $objName`;\nint $curCountOBJID = $curCountOBJID + size($objName);\nint $prevCountOBJID = $curCountOBJID - size($objName);\n\n\n\n\nfor( $i=0; $i < size($objName); $i++){\n\tvray addAttributesFromGroup $objName[$i] vray_objectID 1;\n\tsetAttr ($objName[$i] + \".vrayObjectID\") ($i + 1 + $prevCountOBJID);\n\t}" 
+        -sourceType "mel" 
+        -commandRepeatable 1
+        -flat 1
+    ;
+    shelfButton
+        -enableCommandRepeat 1
+        -enable 1
+        -width 35
+        -height 35
+        -manage 1
+        -visible 1
+        -preventOverride 0
+        -annotation "gcVrayMTL" 
+        -enableBackground 0
+        -backgroundColor 0 0 0 
+        -highlightColor 0.321569 0.521569 0.65098 
+        -align "center" 
+        -label "string $materialName[] = `ls -selection -shortNames`;\nstring $at..." 
+        -labelOffset 0
+        -rotation 0
+        -flipX 0
+        -flipY 0
+        -useAlpha 1
+        -font "plainLabelFont" 
+        -imageOverlayLabel "creates a gamma corrected Vray MTL" 
+        -overlayLabelColor 0.8 0.8 0.8 
+        -overlayLabelBackColor 0 0 0 0.5 
+        -image "commandButton.png" 
+        -image1 "commandButton.png" 
+        -style "iconOnly" 
+        -marginWidth 1
+        -marginHeight 1
+        -command "string $materialName[] = `ls -selection -shortNames`;\nstring $attrNames[] = {\"color\", \"reflectionColor\", \"refractionColor\", \"fogColor\", \"translucencyColor\"};\nfloat $attrValues[] = {.5, 0, 0, 0, 0};\ncreateNode -n ($materialName[0] + \"_mtl\") VRayMtl;\nsetAttr ($materialName[0] + \"_mtl.bumpMapType\") 1;\nsetAttr ($materialName[0] + \"_mtl.brdfType\") 1;\nsetAttr ($materialName[0] + \"_mtl.reflectionColorAmount\") .75;\n\nsets -renderable true -noSurfaceShader true -empty -name ($materialName[0] + \"_sg\");\nconnectAttr -f ($materialName[0] + \"_mtl\" + \".outColor\") ($materialName[0] + \"_sg\" +\".surfaceShader\");\n\nfor($k = 0; $k <`size($attrNames)`; $k ++){\n    string $nodeName= $materialName[0] + \"_\" + $attrNames[$k] + \"_GC\";\n    createNode -n $nodeName  gammaCorrect;\n    setAttr ($nodeName + \".gamma\") .4545 .4545 .4545;\n    setAttr ($nodeName + \".value\") -type \"float3\" $attrValues[$k] $attrValues[$k] $attrValues[$k];\n    connectAttr ($nodeName + \".outValue\") ($materialName[0] + \"_mtl.\" + $attrNames[$k]);\n}\nsets -e -forceElement ($materialName[0] + \"_sg\") $materialName[0];" 
+        -sourceType "mel" 
+        -commandRepeatable 1
+        -flat 1
+    ;
+
+} 
